@@ -12,4 +12,4 @@ class AnimeRecommender(nn.Module):
         user_embed = self.user_embedding(user_ids)
         anime_embed = self.anime_embedding(anime_ids)
 
-        prediction = (user_embed * anime_embed).sum(dim=1)
+        return (user_embed * anime_embed).sum(dim=1)
