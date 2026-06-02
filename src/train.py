@@ -3,6 +3,8 @@ import torch
 import torch.nn as nn
 import pandas as pd
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 DATA_DIR = "./data/"
 BATCH_SIZE = 1024
 USER_EMBED_DIM = 50
@@ -34,7 +36,7 @@ if __name__ == "__main__":
     model = AnimeRecommender(num_users=int(user_ids.max().item() + 1), \
                             num_anime=int(anime_ids.max().item() + 1), \
                             embedding_dim_users=USER_EMBED_DIM, \
-                            embedding_dim_anime=ANIME_EMBED_DIM)
+                            embedding_dim_anime=ANIME_EMBED_DIM).to(device)
 
     loss = nn.MSELoss()
     optim = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
@@ -44,8 +46,8 @@ if __name__ == "__main__":
     for epoch in range(EPOCHS):
         total_loss = 0
         for batch in loader:
-            predictions = model(batch[0], batch[1])
-            mse = loss(predictions, batch[2])
+            predictions = model(batch[0].to(device), batch[1].to(device))
+            mse = loss(predictions, batch[2].to(device))
             total_loss += mse.item()
 
             optim.zero_grad()

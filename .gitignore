@@ -2,3 +2,6 @@ data/
 .env
 Old Stuff/
 notebooks/scratch.ipynb
+*.pth
+__pycache__/
+venv/
