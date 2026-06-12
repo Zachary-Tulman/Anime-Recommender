@@ -4,7 +4,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 DATA_DIR = "./data/"
 
-data = pd.read_csv(f"{DATA_DIR}anime.csv", sep="\t", usecols=["anime_id", "title", "genres", "type"])
+data = pd.read_csv(f"{DATA_DIR}anime.csv", sep="\t", usecols=["anime_id", "title", "genres", "type", \
+                                                                         "score", "status", "num_episodes", "source_type", "score_count"])
 
 # multi-hot encodings
 genres_encode = data["genres"].str.get_dummies(sep="|")

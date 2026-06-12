@@ -8,10 +8,11 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 DATA_DIR = "./data/"
 BATCH_SIZE = 1024
-USER_EMBED_DIM = 50
-ANIME_EMBED_DIM = 50
+USER_EMBED_DIM = 20
+ANIME_EMBED_DIM = 20
 LEARNING_RATE = 0.001
-EPOCHS = 10
+WEIGHT_DECAY = 1e-5
+EPOCHS = 20
 
 ratings = pd.read_csv(f"{DATA_DIR}ratings_sampled_mapped.csv")
 
@@ -35,36 +36,43 @@ class Dataset(torch.utils.data.Dataset):
         return [self.user_ids[i], self.anime_ids[i], self.scores[i]]
 
 if __name__ == "__main__":
-    loader = torch.utils.data.DataLoader(Dataset(user_train, anime_train, scores_train), BATCH_SIZE, shuffle=True)
+    train_loader = torch.utils.data.DataLoader(Dataset(user_train, anime_train, scores_train), BATCH_SIZE, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(Dataset(user_test, anime_test, scores_test), BATCH_SIZE, shuffle=False)
 
     model = AnimeRecommender(num_users=int(user_ids.max().item() + 1), \
                             num_anime=int(anime_ids.max().item() + 1), \
                             embedding_dim_users=USER_EMBED_DIM, \
                             embedding_dim_anime=ANIME_EMBED_DIM).to(device)
 
-    loss = nn.MSELoss()
-    optim = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+    loss_fn = nn.MSELoss()
+    optim = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
 
-    model.train()
     for epoch in range(EPOCHS):
-        total_loss = 0
-        for batch in loader:
+        model.train()
+        train_loss = 0
+        for batch in train_loader:
             predictions = model(batch[0].to(device), batch[1].to(device))
-            mse = loss(predictions, batch[2].to(device))
-            total_loss += mse.item()
+            mse = loss_fn(predictions, batch[2].to(device))
+            train_loss += mse.item()
 
             optim.zero_grad()
             mse.backward()
             nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optim.step()
         
-        print(f"Epoch {epoch+1}/{EPOCHS}, Loss: {total_loss / len(loader):.4f}", flush=True)
+        avg_train_loss = train_loss / len(train_loader)
+
+        # Evaluate every epoch
+        model.eval()
+        test_loss = 0
+        with torch.no_grad():
+            for batch in test_loader:
+                predictions = model(batch[0].to(device), batch[1].to(device))
+                mse = loss_fn(predictions, batch[2].to(device))
+                test_loss += mse.item()
+        
+        avg_test_loss = test_loss / len(test_loader)
+
+        print(f"Epoch {epoch+1}/{EPOCHS} | Train Loss: {avg_train_loss:.4f} | Test Loss: {avg_test_loss:.4f}", flush=True)
 
     torch.save(model.state_dict(), "model.pth")
-
-    model.eval()
-    with torch.no_grad():
-        predictions = model(user_test.to(device), anime_test.to(device))
-        mse = loss(predictions, scores_test.to(device))
-    
-    print(f"Test loss: {mse.item():.4f}")

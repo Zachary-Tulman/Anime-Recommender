@@ -5,3 +5,4 @@ notebooks/scratch.ipynb
 *.pth
 __pycache__/
 venv/
+.vscode/
