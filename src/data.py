@@ -51,5 +51,12 @@ def clean_data():
     result = result.sample(n=15_000_000, random_state=13)
     result.to_csv(f"{DATA_DIR}ratings_clean_sampled.csv", index=False)
 
+def load_anime():
+    anime_data = pd.read_csv(f"{DATA_DIR}anime.csv", sep="\t", usecols=["anime_id", "title", "genres", "type", \
+                                                                         "score", "status", "num_episodes", "source_type", "score_count"])
+    anime_data = anime_data.dropna(subset=["anime_id", "score", "type", "genres"])
+
+    return anime_data
+
 if __name__ == "__main__":
     clean_data()

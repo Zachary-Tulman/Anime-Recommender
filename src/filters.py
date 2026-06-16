@@ -1,6 +1,6 @@
 import pandas as pd
 
-def build_mask(df, min_score=None, max_episodes=None, status=None, source_type=None, min_scores=None):
+def build_mask(df, min_score=None, max_episodes=None, status=None, source_type=None, min_score_count=None):
     mask = pd.Series(True, index=df.index)
 
     if min_score is not None:
@@ -15,7 +15,7 @@ def build_mask(df, min_score=None, max_episodes=None, status=None, source_type=N
     if source_type is not None:
         mask &= (df["source_type"] == source_type)
     
-    if min_scores is not None:
-        mask &= (df["score_count"] >= min_scores)
+    if min_score_count is not None:
+        mask &= (df["score_count"] >= min_score_count)
 
     return mask
