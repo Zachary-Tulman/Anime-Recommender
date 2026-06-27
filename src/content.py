@@ -1,9 +1,13 @@
+"""
+Content-Based Filtering
+"""
+
 import pandas as pd
 import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
-from data import load_anime
 
-DATA_DIR = "./data/"
+from sklearn.metrics.pairwise import cosine_similarity
+from config import GENRE_WEIGHT, TYPE_WEIGHT
+from data import load_anime
 
 data = load_anime()
 
@@ -22,7 +26,8 @@ base_probs = np.outer(genre_prob, genre_prob)
 
 pmi = np.maximum(np.log(joint_probs / base_probs), 0)
 
-def get_similarity(genre_query: pd.DataFrame, type_query: pd.DataFrame, mask = None, n: int = 10, genre_weight: float = 0.775, type_weight: float = 0.225):
+def get_similarity(genre_query: pd.DataFrame, type_query: pd.DataFrame, mask = None, n: int = 10, genre_weight: float = GENRE_WEIGHT, type_weight: float = TYPE_WEIGHT):
+    """Calculates cosine similarity for user-selected genres on all anime"""
     if mask is None:
         mask = pd.Series(True, index=data.index)
 

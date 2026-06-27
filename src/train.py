@@ -1,20 +1,20 @@
-from model import AnimeRecommender
+"""
+This script trains an AnimeRecommender model on the data saved by preprocess.py
+Weights are saved to model.pth
+"""
+
 import torch
 import torch.nn as nn
 import pandas as pd
+
+from config import ANIME_EMBED_DIM, EPOCHS, LEARNING_RATE, USER_EMBED_DIM, WEIGHT_DECAY
+from data import load_processed_ratings
+from model import AnimeRecommender
 from sklearn.model_selection import train_test_split
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-DATA_DIR = "./data/"
-BATCH_SIZE = 1024
-USER_EMBED_DIM = 20
-ANIME_EMBED_DIM = 20
-LEARNING_RATE = 0.001
-WEIGHT_DECAY = 1e-5
-EPOCHS = 20
-
-ratings = pd.read_csv(f"{DATA_DIR}ratings_sampled_mapped.csv")
+ratings = load_processed_ratings()
 
 user_ids = torch.tensor(ratings["user_id"].values, dtype=torch.long)
 anime_ids = torch.tensor(ratings["anime_id"].values, dtype=torch.long)

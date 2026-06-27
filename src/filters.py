@@ -1,6 +1,7 @@
 import pandas as pd
 
 def build_mask(df, min_score=None, max_episodes=None, status=None, min_score_count=20):
+    """Create a boolean mask for filtering shows based on user query"""
     mask = pd.Series(True, index=df.index)
 
     if min_score is not None:

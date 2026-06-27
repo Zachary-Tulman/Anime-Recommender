@@ -1,4 +1,8 @@
-import torch
+"""
+Collaborative Filtering (CF)
+Defines matrix factorization model for predicting user ratings
+"""
+
 import torch.nn as nn
 
 class AnimeRecommender(nn.Module):
