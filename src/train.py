@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import pandas as pd
 
-from config import ANIME_EMBED_DIM, EPOCHS, LEARNING_RATE, USER_EMBED_DIM, WEIGHT_DECAY
+from config import ANIME_EMBED_DIM, EPOCHS, LEARNING_RATE, USER_EMBED_DIM, WEIGHT_DECAY, BATCH_SIZE
 from data import load_processed_ratings
 from model import AnimeRecommender
 from sklearn.model_selection import train_test_split

@@ -9,7 +9,7 @@ import os
 import glob
 import json
 
-from config import DATA_DIR
+from config import DATA_DIR, DROPPED_PCT_CUTOFF, USER_RATING_CUTOFF, ANIME_RATING_CUTOFF
 
 def clean_data() -> pd.DataFrame:
     """Filters and cleans all user_anime*.csv and saves a 15m sample locally"""
