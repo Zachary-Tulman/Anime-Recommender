@@ -13,8 +13,12 @@ from config import DATA_DIR, DROPPED_PCT_CUTOFF, USER_RATING_CUTOFF, ANIME_RATIN
 
 def clean_data() -> pd.DataFrame:
     """Filters and cleans all user_anime*.csv and saves a 15m sample locally"""
-    anime_data = pd.read_csv(f"{DATA_DIR}anime.csv", sep="\t", usecols=["anime_id", "num_episodes"])
+    anime_data = pd.read_csv(f"{DATA_DIR}anime.csv", sep="\t", usecols=["anime_id", "num_episodes", "score", "type", "genres"])
     data_shard_paths = glob.glob(os.path.join(DATA_DIR, "user_anime*.csv"))
+
+    # TODO: Load anime.csv and get the anime_ids dropped by dropna on ["anime_id", "score", "type", "genres"].
+    #       Remove rows with those anime_ids from all shards (whereever that's best done)
+    #       model anime_ids mapped in map_ids() become new source of truth for show existence
     
     user_rating_counts = pd.Series(dtype=int)
     anime_rating_counts = pd.Series(dtype=int)
@@ -22,9 +26,10 @@ def clean_data() -> pd.DataFrame:
     # First pass
     for path in data_shard_paths:
         shard = pd.read_csv(path, sep="\t", usecols=["user_id", "anime_id", "score", "status", "progress"]) \
-        .merge(anime_data, on="anime_id", how="left") \
-        .dropna(subset=["score"])
+        .merge(anime_data[["anime_id", "num_episodes"]], on="anime_id", how="left") \
+        .dropna(subset=["score"])   # TODO: connected to above (?)
         
+        # Only keep completed or dropped w/ >=50% completion
         shard["completion_pct"] = shard["progress"] / shard["num_episodes"]
         shard = shard[(shard["status"] == "completed") | \
                       ((shard["status"] == "dropped") & (shard["completion_pct"] >= DROPPED_PCT_CUTOFF))]
@@ -43,6 +48,7 @@ def clean_data() -> pd.DataFrame:
         .merge(anime_data, on="anime_id", how="left") \
         .dropna(subset=["score"])
 
+        # Same filters as above with minimum rating cutoffs added
         shard["completion_pct"] = shard["progress"] / shard["num_episodes"]
         shard = shard[(shard["user_id"].isin(valid_users)) \
                       & (shard["anime_id"].isin(valid_anime)) \
@@ -53,6 +59,7 @@ def clean_data() -> pd.DataFrame:
         clean_shards.append(shard)
 
     result = pd.concat(clean_shards, ignore_index=True)
+    # TODO: use all data instead of sample
     result = result.sample(n=15_000_000, random_state=13)
     
     return result

@@ -1,22 +1,30 @@
 import pandas as pd
 
-def build_mask(df, min_score=None, max_episodes=None, status=None, min_score_count=20):
+from dataclasses import dataclass
+
+@dataclass(kw_only=True)
+class MaskFilters:
+    min_score: int | None = None
+    max_episodes: int | None = None
+    status: list[str] | None = None
+    min_score_count: int | None = 20
+
+def build_mask(df, filters: MaskFilters):
     """Create a boolean mask for filtering shows based on user query"""
     mask = pd.Series(True, index=df.index)
 
-    if min_score is not None:
-        mask &= (df["score"] >= min_score)
+    if filters.min_score is not None:
+        mask &= (df["score"] >= filters.min_score)
     
-    if max_episodes is not None:
-        mask &= (df["num_episodes"] <= max_episodes)
+    if filters.max_episodes is not None:
+        mask &= (df["num_episodes"] <= filters.max_episodes)
 
-    if status is not None:
-        if isinstance(status, str): status = [status]
-        mask &= (df["status"].isin(status))
+    if filters.status is not None:
+        mask &= (df["status"].isin(filters.status))
     else:
         mask &= (df["status"].isin(["Finished Airing", "Currently Airing"]))
     
-    if min_score_count is not None:
-        mask &= (df["score_count"] >= min_score_count)
+    if filters.min_score_count is not None:
+        mask &= (df["score_count"] >= filters.min_score_count)
 
     return mask

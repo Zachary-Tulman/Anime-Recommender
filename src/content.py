@@ -11,7 +11,7 @@ from data import load_anime
 
 data = load_anime()
 
-# multi-hot encodings
+# Multi-hot encodings
 genres_encode = data["genres"].str.get_dummies(sep="|")
 type_encode = pd.get_dummies(data["type"])
 
@@ -31,7 +31,7 @@ def get_similarity(genre_query: pd.DataFrame, type_query: pd.DataFrame, mask = N
     if mask is None:
         mask = pd.Series(True, index=data.index)
 
-    # apply boolean masking for user-led filtering
+    # Apply boolean masking for user-led filtering
     masked_genres = genres_encode[mask]
     masked_type = type_encode[mask]
     masked_titles = data["title"][mask]

@@ -9,29 +9,21 @@ import torch
 from dataclasses import dataclass
 from config import ANIME_EMBED_DIM, DATA_DIR, ROOT_DIR, USER_EMBED_DIM
 from model import AnimeRecommender
-from data import load_anime
-from content import genres_encode, type_encode, get_similarity
-from filters import build_mask
+from content import genres_encode, type_encode, get_similarity, data
+from filters import build_mask, MaskFilters
 
 @dataclass
 class ContentQuery:
     genres: list[str] | None = None
-    air_type: str | None = None
+    types: list[str] | None = None
 
 @dataclass
-class FilterQuery:
-    min_score: int | None = None
-    max_episodes: int | None = None
-    status: str | None = None
-    min_score_count: int | None = None
-
-@dataclass
-class Weights:
+class RecommenderWeights:
     w_cf: float = 0.55
     w_content: float = 0.2
     w_community: float = 0.25
 
-def recommend(user_id: str, query: ContentQuery = ContentQuery(), weights: Weights = Weights()):
+def recommend(user_id: str, query: ContentQuery = ContentQuery(), weights = RecommenderWeights()):
     """
     Collect CF, Content, and Community scores per user query and combine into hybrid score.
     Return list of highest scoring anime based on hybrid score DESC
@@ -39,11 +31,16 @@ def recommend(user_id: str, query: ContentQuery = ContentQuery(), weights: Weigh
         2. import filters:build_mask, content:get_similarity. run get_similarity
         3. just get the score row from anime.csv
     """
+    # TODO: apply this mask to all hybrid parts
+    filters = MaskFilters()
+    mask = build_mask(df=data, filters=filters)
+
     # Collaborative Filtering
     with open(f"{DATA_DIR}user_id_map.json", "r") as f:
         user_id_map = json.load(f)
     with open(f"{DATA_DIR}anime_id_map.json", "r") as f:
         anime_id_map = json.load(f)
+
     if user_id in user_id_map:  # No CF if no user data
         model = AnimeRecommender(max(user_id_map.values()) + 1, USER_EMBED_DIM, max(anime_id_map.values()) + 1, ANIME_EMBED_DIM)
         model.load_state_dict(torch.load(f"{ROOT_DIR}model.pth"))
@@ -52,6 +49,7 @@ def recommend(user_id: str, query: ContentQuery = ContentQuery(), weights: Weigh
         user_tensor = torch.tensor([user_id_map[user_id]] * len(anime_id_map), dtype=torch.long)
         anime_tensor = torch.arange(len(anime_id_map))
 
+        # Normalize score predictions to [0.1:1.0]
         with torch.no_grad():
             cf_preds = torch.clamp(model(user_tensor, anime_tensor), 1, 10) / 10.0
     else: cf_preds = None
@@ -62,6 +60,12 @@ def recommend(user_id: str, query: ContentQuery = ContentQuery(), weights: Weigh
     if query.genres:
         for genre in query.genres:
             genre_query[genre] = 1
+    if query.types:
+        for type in query.types:
+            type_query[type] = 1
+
+    # Community Score
+
 
     # TODO: redesign build_mask() to be used for all 3 rating types (cf, content, community)
-    content_preds = get_similarity(genre_query, type_query, build_mask())
+    content_preds = get_similarity(genre_query, type_query, mask=mask)

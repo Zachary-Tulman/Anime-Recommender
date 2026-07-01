@@ -1,6 +1,6 @@
 """
 Collaborative Filtering (CF)
-Defines matrix factorization model for predicting user ratings
+This file defines the matrix factorization model for predicting user ratings
 """
 
 import torch.nn as nn
